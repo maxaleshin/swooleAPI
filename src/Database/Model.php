@@ -3,8 +3,9 @@
 namespace SwooleAPI\Database;
 
 use SwooleAPI\Core\Application;
+use JsonSerializable;
 
-abstract class Model
+abstract class Model implements JsonSerializable
 {
     /**
      * Имя таблицы в базе данных
@@ -399,5 +400,10 @@ abstract class Model
     public function toJson(int $options = 0): string
     {
         return json_encode($this->toArray(), $options);
+    }
+    
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }
