@@ -23,12 +23,12 @@ class Route
      */
     public function match(string $method, string $path): bool
     {
-        // Сначала проверяем метод
+        // проверка метода
         if ($this->method !== 'ANY' && $this->method !== strtoupper($method)) {
             return false;
         }
         
-        // Затем проверяем путь
+        // и пути
         $result = $this->matchPath($path);
         
         return $result;
@@ -39,15 +39,15 @@ class Route
      */
     private function matchPath(string $path): bool
     {
-        // Если пути совпадают буквально, возвращаем true
+        // самый простой вариант, например при GET /users/ маршруты будут совпадать буквально 
         if ($this->path === $path) {
             return true;
         }
         
-        // Парсим шаблон пути и проверяем через регулярное выражение
+        // парсинг шаблона пути. проверка через регулярное выражение.
         $pattern = $this->pathToPattern($this->path);
         if (preg_match($pattern, $path, $matches)) {
-            // Извлекаем параметры маршрута
+            // забираем параметры маршрута
             foreach ($matches as $key => $value) {
                 if (is_string($key)) {
                     $this->params[$key] = $value;
@@ -64,16 +64,20 @@ class Route
      */
     private function pathToPattern(string $path): string
     {
-        // Заменяем параметры вида {id} на именованные группы (?<id>[^/]+)
+        // поддержка именнованных параметров, т.е. если параметры передаются в виде GET /users/id:123
+        // /users/{id} → /users/(?<id>)
+        // /users/{id:\d+} → /users/(?<id>\d+)
         $pattern = preg_replace('/{([^:}]+)(:([^}]+))?}/', '(?<$1>$3)', $path);
         
-        // Если нет специального шаблона, используем [^/]+ (любой символ, кроме /)
+        // случай, когда шаблон не указывается
+        // /users/(?<id>) → /users/(?<id>[^/]+)
+        // (/users/(?<id>\d+) останется без изменений, так как уже содержит шаблон)
         $pattern = preg_replace('/\(\?<([^>]+)>\)/', '(?<$1>[^/]+)', $pattern);
         
-        // Экранируем слеши, добавляем начало и конец строки
+        // экранирует слеши, добавляя начало и конец строки
         $pattern = '#^' . str_replace('/', '\/', $pattern) . '$#';
         
-        return $pattern;
+        return $pattern;  // возвращаем непосредственно регулярку, которая используется в matchPath()
     }
 
     /**

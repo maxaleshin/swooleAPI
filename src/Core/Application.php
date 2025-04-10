@@ -52,7 +52,7 @@ class Application
     {
         $this->server = new Server($host, $port);
         
-        // Настройка сервера
+        // настройка сервера
         $this->server->set([
             'worker_num' => $this->config->get('server.workers', swoole_cpu_num()),
             'max_request' => $this->config->get('server.max_requests', 10000),
@@ -60,15 +60,17 @@ class Application
             'log_level' => SWOOLE_LOG_INFO,
         ]);
         
-        // Регистрация обработчиков запросов
+        // регистрация обработчиков запросов
         $this->server->on('start', [$this, 'onStart']);
         $this->server->on('request', [$this, 'onRequest']);
         
         // Собираем маршруты на основе атрибутов
+        // сбор маршрутов из существующих атрибутов в /src/Routing/Attributes
+        // (также при задании нового атрибута необходимо его зарегистрировать в AttributeRouteCollector в isRouteAttribute и getHttpMethodFromAttribute)
         $routeCollector = new AttributeRouteCollector($this->router);
         $routeCollector->collect($this->config->get('app.controllers_path', []));
         
-        // Запуск сервера
+        // запуск сервера
         $this->logger->info("Server started at http://{$host}:{$port}");
         $this->server->start();
     }

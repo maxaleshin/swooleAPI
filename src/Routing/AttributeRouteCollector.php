@@ -33,14 +33,14 @@ class AttributeRouteCollector
             return;
         }
 
-        // Рекурсивно ищем файлы PHP
+        // забираем все маршруты, которые прописали в папке Attributes
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
         );
 
         foreach ($iterator as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
-                $this->processFile($file->getPathname());
+                $this->processFile($file->getPathname()); // запускаем обработку ФАЙЛА
             }
         }
     }
@@ -50,20 +50,19 @@ class AttributeRouteCollector
      */
     private function processFile(string $file): void
     {
-        // Получаем содержимое файла
+        // получаем содержимое файла
         $content = file_get_contents($file);
         
-        // Ищем объявление класса
+        // ищем объявление класса с помощью регулярного выражжения
         if (preg_match('/namespace\s+([^;]+)/i', $content, $matches)) {
             $namespace = $matches[1];
             
-            // Ищем имя класса
+            // забираем имя класса
             if (preg_match('/class\s+(\w+)/i', $content, $matches)) {
                 $className = $matches[1];
                 $fullClassName = $namespace . '\\' . $className;
                 
-                // Обрабатываем класс и его методы
-                $this->processClass($fullClassName);
+                $this->processClass($fullClassName); // запускаем обработку КЛАССА
             }
         }
     }
@@ -73,24 +72,23 @@ class AttributeRouteCollector
      */
     private function processClass(string $className): void
     {
-        // Проверяем существование класса
+        // так проверяем определен ли класс
         if (!class_exists($className)) {
             return;
         }
 
-        // Получаем рефлексию класса
+        // забираем рефлексию класса
         $reflectionClass = new ReflectionClass($className);
         
-        // Получаем публичные методы
+        // выбираем публичные методы
         $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
         
         foreach ($methods as $method) {
-            // Пропускаем наследуемые методы
-            if ($method->getDeclaringClass()->getName() !== $className) {
-                continue;
+            if ($method->getDeclaringClass()->getName() !== $className) { /// проверяем, является ли метод унаследованным
+                continue; // если метод наследуемый, то пропускаем, в итоге останутся только ненаследуемые
             }
             
-            // Обрабатываем атрибуты метода
+            // запускаем обработку МЕТОДА
             $this->processMethodAttributes($method, $className);
         }
     }
@@ -100,29 +98,27 @@ class AttributeRouteCollector
      */
     private function processMethodAttributes(ReflectionMethod $method, string $className): void
     {
-        // Получаем атрибуты
+        // получаем атрибуты
         $attributes = $method->getAttributes();
         
         foreach ($attributes as $attribute) {
-            // Получаем имя атрибута
             $attributeName = $attribute->getName();
             
-            // Проверяем, является ли атрибут маршрутом
+            // проверка на то что аттрибут является маршрутом
             if ($this->isRouteAttribute($attributeName)) {
-                // Получаем экземпляр атрибута
+                // берем экземпляр
                 $routeAttribute = $attribute->newInstance();
                 
-                // Получаем метод HTTP и путь из атрибута
+                // забираем Http-метод из аттрибута
                 $httpMethod = $this->getHttpMethodFromAttribute($attributeName);
                 $path = $routeAttribute->path;
                 
-                // Создаем обработчик
+                // создаем хендлер
                 $handler = [$className, $method->getName()];
                 
-                // Получаем middleware из атрибута, если они есть
+                // берем middleware из атрибута, если они есть
                 $middlewares = property_exists($routeAttribute, 'middlewares') ? $routeAttribute->middlewares : [];
                 
-                // Добавляем маршрут в маршрутизатор
                 $this->router->$httpMethod($path, $handler, $middlewares);
             }
         }
@@ -156,7 +152,7 @@ class AttributeRouteCollector
             'SwooleAPI\Routing\Attributes\Put' => 'put',
             'SwooleAPI\Routing\Attributes\Delete' => 'delete',
             'SwooleAPI\Routing\Attributes\Route' => 'any',
-            'SwooleAPI\Routing\Attributes\Async' => 'get' // По умолчанию Async использует GET
+            'SwooleAPI\Routing\Attributes\Async' => 'get' // по умолчанию Async будет использовать GET
         ];
         
         return $methodMap[$attributeName] ?? 'any';

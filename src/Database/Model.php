@@ -20,7 +20,7 @@ abstract class Model implements JsonSerializable
     /**
      * Указывает, автоматически ли управлять полями created_at и updated_at
      */
-    protected bool $timestamps = true;
+    protected bool $timestamps = false;
 
     /**
      * Имя поля для хранения времени создания

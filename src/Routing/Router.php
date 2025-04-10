@@ -82,16 +82,16 @@ class Router
      */
     private function addRoute(string $method, string $path, $handler, array $middlewares = []): Route
     {
-        // Применяем префикс пути, если есть
+        // применяем префикс пути, если есть
         $path = $this->prefix . $path;
         
-        // Создаем объект маршрута
+        // создаем объект маршрута
         $route = new Route($method, $path, $handler);
         
-        // Добавляем промежуточное ПО группы и маршрута
+        // добавляем мидлвару
         $route->middleware(array_merge($this->middlewares, $middlewares));
         
-        // Добавляем маршрут в коллекцию
+        // добавляем маршрут в коллекцию
         $this->routes[] = $route;
         
         return $route;
@@ -102,11 +102,11 @@ class Router
      */
     public function group(array $attributes, callable $callback): self
     {
-        // Сохраняем текущее состояние
+        // сохранение текущего состояния
         $previousPrefix = $this->prefix;
         $previousMiddlewares = $this->middlewares;
         
-        // Применяем атрибуты группы
+        // 
         if (isset($attributes['prefix'])) {
             $this->prefix .= '/' . trim($attributes['prefix'], '/');
         }
@@ -116,10 +116,9 @@ class Router
             $this->middlewares = array_merge($this->middlewares, $middlewares);
         }
         
-        // Вызываем коллбэк для определения маршрутов в группе
+        // 
         $callback($this);
         
-        // Восстанавливаем предыдущее состояние
         $this->prefix = $previousPrefix;
         $this->middlewares = $previousMiddlewares;
         
@@ -131,13 +130,13 @@ class Router
      */
     public function match(string $method, string $path): ?Route
     {
-        // Нормализуем путь
+        // нормализация пути
         $path = '/' . trim($path, '/');
         if ($path === '//' || $path === '') {
             $path = '/';
         }
         
-        // Ищем маршрут
+        // поиск маршрута по пути
         foreach ($this->routes as $route) {
             if ($route->match($method, $path)) {
                 return $route;

@@ -7,7 +7,7 @@ use Attribute;
 /**
  * Базовый атрибут маршрута
  */
-#[Attribute(Attribute::TARGET_METHOD)]
+#[Attribute(Attribute::TARGET_METHOD)] // этот мета атрибут гарантирует, что атрибуты маршрутизации можно применять только к методам
 class Route
 {
     public function __construct(

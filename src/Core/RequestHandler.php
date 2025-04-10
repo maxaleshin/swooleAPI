@@ -21,9 +21,10 @@ class RequestHandler
      */
     public function handle(Request $request, Response $response, Router $router): void
     {
-        // Ищем маршрут
+        // поиск маршрута в роутере
         $route = $router->match($request->getMethod(), $request->getUri());
 
+        // ошибка несопоставления
         if ($route === null) {
             $response->setStatusCode(404)->json([
                 'error' => 'Not Found',
@@ -32,15 +33,16 @@ class RequestHandler
             return;
         }
 
-        // Устанавливаем параметры маршрута в запросе
+        // установка параметров маршрута в запросе
         $request->setRouteParams($route->getParams());
 
-        // Получаем контроллер и метод
+        // забираем контроллер и метод
         $handler = $route->getHandler();
         
-        // Запускаем цепочку middleware
+        // запуск цепочки middleware
+        // TODO: изменить порядок? надо  не надо я не знаю
         $this->processMiddlewares($request, $response, $route->getMiddlewares(), function() use ($request, $response, $handler) {
-            // Вызываем обработчик маршрута
+            // обработчик маршрута
             $this->callRouteHandler($handler, $request, $response);
         });
     }
@@ -55,22 +57,19 @@ class RequestHandler
             return;
         }
 
-        // Берем первый middleware из списка
+        // возьмем первый middleware-обработчик и определим его класс
         $middleware = array_shift($middlewares);
-        
-        // Определяем его класс
         $middlewareClass = is_string($middleware) ? $middleware : get_class($middleware);
         
-        // Получаем экземпляр middleware
+        // возмьме его экземпляр
         $instance = is_string($middleware) ? $this->container->get($middlewareClass) : $middleware;
-        
         if (!$instance instanceof MiddlewareInterface) {
             throw new \RuntimeException("Middleware must implement MiddlewareInterface: {$middlewareClass}");
         }
 
-        // Запускаем middleware с вложенной обработкой оставшихся middleware
+        // запускаем работу middleware
         $instance->process($request, $response, function() use ($request, $response, $middlewares, $final) {
-            $this->processMiddlewares($request, $response, $middlewares, $final);
+            $this->processMiddlewares($request, $response, $middlewares, $final); // А теперь вложенно продолжаем идти по оставшимся мидлварам
         });
     }
 
@@ -79,9 +78,9 @@ class RequestHandler
      */
     private function callRouteHandler($handler, Request $request, Response $response): void
     {
-        // Определяем тип обработчика
+        // определяем тип обработчика
         if (is_callable($handler)) {
-            // Если обработчик - замыкание, вызываем его через контейнер
+            // если обработчик - замыкание, вызываем его через контейнер
             $result = $this->container->call($handler, [
                 'request' => $request,
                 'response' => $response
@@ -89,7 +88,7 @@ class RequestHandler
             
             $this->handleResult($result, $response);
         } elseif (is_array($handler) && count($handler) === 2) {
-            // Если обработчик - массив [класс, метод], вызываем через контейнер
+            // если обработчик - массив [класс, метод], то тоже вызываем через контейнер
             $controller = is_object($handler[0]) ? $handler[0] : $this->container->get($handler[0]);
             
             $result = $this->container->call([$controller, $handler[1]], [
@@ -108,16 +107,17 @@ class RequestHandler
      */
     private function handleResult($result, Response $response): void
     {
-        // Если результат не null и ответ еще не отправлен
+        // если результат не null и еще не отправлен
+        // (такое возможно если промежуточный обработчик выше решит отправить, проще проверить здесь что не отправлен, чем проверять там)
         if ($result !== null && !$response->isSent()) {
             if (is_array($result) || is_object($result)) {
-                // Отправляем JSON ответ для массивов и объектов
+                //  JSON для массивов и объектов
                 $response->json($result);
             } elseif (is_string($result)) {
-                // Отправляем текстовый ответ для строк
+                // текстовый ответ для строк
                 $response->write($result);
             } else {
-                // Для других типов преобразуем в строку
+                // для остальных насильно преобразуем в строку
                 $response->write((string)$result);
             }
         }
