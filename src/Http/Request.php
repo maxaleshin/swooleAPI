@@ -114,7 +114,7 @@ class Request
             return $this->parsedBody;
         }
         
-        // Если запрос типа application/json, декодируем его
+        // если application/json, то десериализуем
         $contentType = $this->getHeader('content-type', '');
         
         if (strpos($contentType, 'application/json') !== false) {

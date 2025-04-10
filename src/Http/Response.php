@@ -86,20 +86,18 @@ class Response
             return $this;
         }
 
-        // Устанавливаем статус код
+        // статус код надо брать у сущности
         $this->swooleResponse->status($this->statusCode);
 
-        // Устанавливаем заголовки
+        // установка заголовков
         foreach ($this->headers as $name => $value) {
             $this->swooleResponse->header($name, $value);
         }
 
-        // Устанавливаем тип содержимого, если он не установлен
+        // если content-type не установлен, то устанавливаем
         if (!isset($this->headers['Content-Type'])) {
             $this->swooleResponse->header('Content-Type', 'text/plain; charset=utf-8');
         }
-
-        // Отправляем содержимое
         $this->swooleResponse->end($content);
         $this->sent = true;
 
@@ -115,13 +113,12 @@ class Response
             return $this;
         }
 
-        // Устанавливаем заголовок Content-Type
+        // установка заголовка content-type
         $this->setHeader('Content-Type', 'application/json; charset=utf-8');
 
-        // Кодируем данные в JSON
+        // суриализуем в json
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        // Отправляем ответ
         return $this->write($json);
     }
 
@@ -144,17 +141,15 @@ class Response
     /**
      * Перенаправление на другой URL
      */
-    public function redirect(string $url, int $statusCode = 302): self
+    public function redirect(string $url, int $statusCode = 302): self // оставляем возможность изменения статутса
     {
         if ($this->sent) {
             return $this;
         }
 
-        // Устанавливаем заголовок Location и статус код
         $this->setHeader('Location', $url);
-        $this->setStatusCode($statusCode);
+        $this->setStatusCode($statusCode); // 302 по умолчанию
 
-        // Отправляем пустой ответ
         return $this->write('');
     }
 
@@ -167,25 +162,23 @@ class Response
             return $this;
         }
 
-        // Проверяем существование файла
         if (!file_exists($path)) {
             $this->setStatusCode(404);
             return $this->write('File not found');
         }
-
-        // Определяем MIME-тип файла
+        
+        // установка нужных mime-типов
         $mimeType = mime_content_type($path) ?: 'application/octet-stream';
         $this->setHeader('Content-Type', $mimeType);
 
-        // Устанавливаем статус код
         $this->swooleResponse->status($this->statusCode);
 
-        // Устанавливаем заголовки
+        // устанавливаем заголовки  
         foreach ($this->headers as $name => $value) {
             $this->swooleResponse->header($name, $value);
         }
 
-        // Отправляем файл
+        // отправка файла
         $this->swooleResponse->sendfile($path);
         $this->sent = true;
 
@@ -201,10 +194,9 @@ class Response
             return $this;
         }
 
-        // Устанавливаем заголовок Content-Type
-        $this->setHeader('Content-Type', $mimeType);
+        // установка заголовка content-type
+        $this->setHeader('Content-Type', $mimeType); // application/octet-stream по умолчанию
 
-        // Отправляем ответ
         return $this->write($data);
     }
 
