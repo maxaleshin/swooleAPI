@@ -11,30 +11,25 @@ class PgSqlConnection extends Connection
     {
         $this->config = $config;
 
-        // Формируем DSN
         $dsn = "pgsql:host={$config['host']};port={$config['port']};dbname={$config['database']}";
-        
-        // Добавляем параметры в DSN, если они заданы
         if (isset($config['sslmode'])) {
             $dsn .= ";sslmode={$config['sslmode']}";
         }
-        
-        // Опции PDO
         $options = [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             \PDO::ATTR_EMULATE_PREPARES => false
         ];
         
-        // Устанавливаем соединение
+        // установка соединения
         $this->pdo = new \PDO($dsn, $config['username'], $config['password'], $options);
         
-        // Устанавливаем схему поиска, если задана
+        // установка схемы поиска, если задана
         if (isset($config['schema'])) {
             $this->execute("SET search_path TO {$config['schema']}");
         }
         
-        // Устанавливаем кодировку
+        // установка кодировки
         if (isset($config['charset'])) {
             $this->execute("SET client_encoding TO '{$config['charset']}'");
         }

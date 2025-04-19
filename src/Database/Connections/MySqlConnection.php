@@ -11,10 +11,8 @@ class MySqlConnection extends Connection
     {
         $this->config = $config;
 
-        // Формируем DSN
         $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['database']}";
         
-        // Опции PDO
         $options = [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
@@ -22,7 +20,7 @@ class MySqlConnection extends Connection
             \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$config['charset']}"
         ];
         
-        // Устанавливаем соединение
+        // установока соединения
         $this->pdo = new \PDO($dsn, $config['username'], $config['password'], $options);
         
         return $this;

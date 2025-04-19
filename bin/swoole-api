@@ -1,0 +1,104 @@
+#!/usr/bin/env php
+<?php
+
+// проверка запущен ли скрипт из консоли
+if (php_sapi_name() !== 'cli') {
+    echo "Этот скрипт может быть запущен только из командной строки." . PHP_EOL;
+    exit(1);
+}
+
+// определение пути к файлу автозагрузки
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+$autoloadFile = null;
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        $autoloadFile = $path;
+        break;
+    }
+}
+// обработка случая отстутствия файла
+if ($autoloadFile === null) {
+    echo "Не удалось найти файл автозагрузки Composer. Убедитесь, что вы установили зависимости через Composer." . PHP_EOL;
+    exit(1);
+}
+
+// подключение автозагрузчика
+require $autoloadFile;
+
+// создаем команды которые будут доступны в CLI
+$commands = [
+    'new' => SwooleAPI\Console\NewCommand::class,
+    // а здесь в будущем можно создат новые команды!
+];
+
+// забираем аргументы командной строки
+$argv = $_SERVER['argv'];
+array_shift($argv); // убираем имя скрипта
+
+// получаем команду
+$commandName = $argv[0] ?? null;
+
+// если команда не указана или не --help, то показываем справку
+if ($commandName === null || $commandName === '--help' || $commandName === '-h') {
+    showHelp($commands);
+    exit(0);
+}
+
+if (!isset($commands[$commandName])) {
+    echo "Неизвестная команда: {$commandName}" . PHP_EOL;
+    showHelp($commands);
+    exit(1);
+}
+
+$commandClass = $commands[$commandName];
+$command = new $commandClass();
+array_shift($argv);
+
+$args = [];
+$options = [];
+
+foreach ($argv as $arg) {
+    if (strpos($arg, '--') === 0) {
+        // 
+        $option = substr($arg, 2);
+        $optionParts = explode('=', $option, 2);
+        
+        if (count($optionParts) === 2) {
+            // случай --option=value
+            $options[$optionParts[0]] = $optionParts[1];
+        } else {
+            // случай --option
+            $options[$option] = true;
+        }
+    } else {
+        $args[] = $arg;
+    }
+}
+
+$exitCode = $command->handle($args, $options);
+
+exit($exitCode);
+
+/**
+ * Показать справку по доступным командам
+ */
+function showHelp(array $commands): void {
+    echo "SwooleAPI CLI - утилита для работы с фреймворком SwooleAPI" . PHP_EOL;
+    echo PHP_EOL;
+    echo "Использование:" . PHP_EOL;
+    echo "  swoole-api [команда] [опции] [аргументы]" . PHP_EOL;
+    echo PHP_EOL;
+    echo "Доступные команды:" . PHP_EOL;
+    
+    foreach ($commands as $name => $class) {
+        $command = new $class();
+        echo "  {$name}" . str_repeat(' ', 15 - strlen($name)) . $command->getDescription() . PHP_EOL;
+    }
+    
+    echo PHP_EOL;
+    echo "Для получения справки по конкретной команде:" . PHP_EOL;
+    echo "  swoole-api [команда] --help" . PHP_EOL;
+}

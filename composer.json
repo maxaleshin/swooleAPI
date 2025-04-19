@@ -22,5 +22,8 @@
     },
     "suggest": {
         "ext-openssl": "Required for HTTPS support"
-    }
+    },
+    "bin": [
+        "bin/swoole-api"
+    ]
 }
