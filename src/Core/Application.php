@@ -50,10 +50,13 @@ class Application
      */
     public function run(string $host = '0.0.0.0', int $port = 8000): void
     {
+        echo $host, $port;
         $this->server = new Server($host, $port);
         
         // настройка сервера
         $this->server->set([
+            'host' => $this->config->get('server.host', ),
+            'port' => $this->config->get('server.port', ),
             'worker_num' => $this->config->get('server.workers', swoole_cpu_num()),
             'max_request' => $this->config->get('server.max_requests', 10000),
             'enable_coroutine' => true,
@@ -70,6 +73,9 @@ class Application
         $routeCollector = new AttributeRouteCollector($this->router);
         $routeCollector->collect($this->config->get('app.controllers_path', []));
         
+        // $host = $this->config->get('server.host', '0.0.0.0');
+        // $port = $this->config->get('server.port', 8000);
+
         // запуск сервера
         $this->logger->info("Server started at http://{$host}:{$port}");
         $this->server->start();

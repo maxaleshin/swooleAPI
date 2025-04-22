@@ -21,6 +21,7 @@ class ScaffoldCommand
             'db_password' => 'postgres',
             'app_name' => 'SwooleAPI Application',
             'app_debug' => true,
+            'server_host' => 'localhost',
             'server_port' => 8080,
             'server_workers' => 4
         ], $options);
@@ -73,15 +74,15 @@ class ScaffoldCommand
      */
     private function createConfigFiles(): void
     {
-        // Основной файл конфигурации
+        // основной файл конфигурации
         $appConfig = $this->generateAppConfig();
         $this->writeFile('config/app.php', $appConfig);
 
-        // Файл конфигурации базы данных
+        // файл конфигурации базы данных
         $dbConfig = $this->generateDatabaseConfig();
         $this->writeFile('config/database.php', $dbConfig);
 
-        // Файл конфигурации сервера
+        // файл конфигурации сервера
         $serverConfig = $this->generateServerConfig();
         $this->writeFile('config/server.php', $serverConfig);
     }
@@ -91,11 +92,11 @@ class ScaffoldCommand
      */
     private function createPublicFiles(): void
     {
-        // Входной файл для веб-сервера
+        // входной файл для веб-сервера
         $indexFile = $this->generateIndexFile();
         $this->writeFile('public/index.php', $indexFile);
 
-        // Файл .htaccess для Apache
+        // файл .htaccess для Apache
         $htaccessFile = $this->generateHtaccessFile();
         $this->writeFile('public/.htaccess', $htaccessFile);
     }
@@ -105,7 +106,7 @@ class ScaffoldCommand
      */
     private function createControllerFiles(): void
     {
-        // Пример контроллера
+        // пример контроллера
         $homeController = $this->generateHomeController();
         $this->writeFile('app/Controllers/HomeController.php', $homeController);
     }
@@ -115,7 +116,7 @@ class ScaffoldCommand
      */
     private function createModelFiles(): void
     {
-        // Пример модели
+        // пример модели
         $baseModel = $this->generateExampleModel();
         $this->writeFile('app/Models/ExampleModel.php', $baseModel);
     }
@@ -132,18 +133,17 @@ return [
     \'app\' => [
         \'name\' => \'' . $this->options['app_name'] . '\',
         \'debug\' => ' . ($this->options['app_debug'] ? 'true' : 'false') . ',
-        \'url\' => \'http://localhost:' . $this->options['server_port'] . '\',
+        \'url\' => \'http://' . $this->options['server_host'] . ':' . $this->options['server_port'] . '\',
         \'base_path\' => dirname(__DIR__),
         \'controllers_path\' => [
             dirname(__DIR__) . \'/app/Controllers\'
         ]
     ],
     
-    // Подключение других конфигурационных файлов
-    \'include\' => [
-        \'database\' => __DIR__ . \'/database.php\',
-        \'server\' => __DIR__ . \'/server.php\'
-    ]
+    // Подключение конфигурационных файлов
+    \'database\' => __DIR__ . \'/database.php\',
+    \'server\' => __DIR__ . \'/server.php\'
+    
 ];
 ';
     }
@@ -195,10 +195,10 @@ return [
 return [
     // Настройки Swoole сервера
     \'server\' => [
-        \'host\' => \'0.0.0.0\',
+        \'host\' => ' . $this->options['server_host'] . ',
         \'port\' => ' . $this->options['server_port'] . ',
         \'workers\' => ' . $this->options['server_workers'] . ',
-        \'max_requests\' => 1000,
+        \'max_requests\' => 8000,
         \'enable_coroutine\' => true,
         \'log_level\' => SWOOLE_LOG_INFO,
         \'daemonize\' => false,
@@ -220,11 +220,7 @@ require_once dirname(__DIR__) . \'/vendor/autoload.php\';
 
 // Загружаем конфигурацию
 $config = require_once dirname(__DIR__) . \'/config/app.php\';
-
-// Создаем экземпляр приложения
 $app = new SwooleAPI\Core\Application($config);
-
-// Регистрируем сервис-провайдеры
 $app->register(SwooleAPI\Providers\DatabaseServiceProvider::class);
 
 // Запускаем приложение
@@ -324,13 +320,16 @@ class ExampleModel extends Model
     protected string $table = \'examples\';
 
     /**
-     * Атрибуты, которые можно массово заполнять
+     * Атрибуты, которые можно заполнять
      */
     protected array $fillable = [
         \'name\',
         \'description\',
         \'status\'
     ];
+    
+    // По умолчанию метки времени отключаем
+    protected bool $timestamps = false;
 }
 ';
     }

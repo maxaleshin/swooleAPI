@@ -17,6 +17,7 @@ class NewCommand extends Command
         '--db-user' => 'Имя пользователя базы данных',
         '--db-pass' => 'Пароль пользователя базы данных',
         '--db-host' => 'Хост базы данных',
+        '--host' => 'Хост для веб-сервера',
         '--port' => 'Порт для веб-сервера',
         '--force' => 'Принудительное создание, даже если директория не пуста'
     ];
@@ -51,14 +52,15 @@ class NewCommand extends Command
         $dbUser = $options['db-user'] ?? $this->ask('Имя пользователя БД:', $dbType === 'pgsql' ? 'postgres' : 'root');
         $dbPass = $options['db-pass'] ?? $this->ask('Пароль пользователя БД:', '');
         $dbHost = $options['db-host'] ?? $this->ask('Хост базы данных:', 'localhost');
-        $dbPort = $dbType === 'pgsql' ? '5432' : '3306';
+        $dbPort = $dbType === 'pgsql' ? '5432' : '3306'; // Предполагается две БД постгрес и mysql
         
+        $serverHost = $options['host'] ?? $this->ask('Хост для веб-сервера:', 'localhost');
         $serverPort = $options['port'] ?? $this->ask('Порт для веб-сервера:', '8080');
         $serverWorkers = $this->ask('Количество рабочих процессов:', (string)swoole_cpu_num());
         
         $appDisplayName = ucwords(str_replace(['-', '_'], ' ', $appName));
 
-        // Настройки для генератора
+        // настройки для генератора
         $scaffoldOptions = [
             'database' => $dbType,
             'db_host' => $dbHost,
@@ -68,6 +70,7 @@ class NewCommand extends Command
             'db_password' => $dbPass,
             'app_name' => $appDisplayName,
             'app_debug' => true,
+            'server_host' => $serverHost,
             'server_port' => $serverPort,
             'server_workers' => (int)$serverWorkers
         ];
@@ -92,7 +95,7 @@ class NewCommand extends Command
             $this->write("php public/index.php");
         }
         
-        $this->info("\nПриложение будет доступно по адресу: http://localhost:{$serverPort}");
+        $this->info("\nПриложение будет доступно по адресу: http://{$serverHost}:{$serverPort}");
 
         return 0;
     }
