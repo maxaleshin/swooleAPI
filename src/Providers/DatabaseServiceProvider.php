@@ -12,13 +12,13 @@ class DatabaseServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Регистрируем менеджер баз данных как синглтон
+        // регистрируем менеджер баз данных как синглтон
         $this->getContainer()->singleton(DatabaseManager::class, function() {
             $config = $this->app->getContainer()->get('SwooleAPI\Core\Config');
             return new DatabaseManager($config);
         });
 
-        // Регистрируем алиас для удобства использования
+        // 
         $this->getContainer()->singleton('db', function() {
             return $this->getContainer()->get(DatabaseManager::class);
         });
